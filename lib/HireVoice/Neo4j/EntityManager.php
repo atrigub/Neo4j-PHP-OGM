@@ -452,12 +452,18 @@ class EntityManager
      * @param Object $a
      * @param Object $b
      */
-    public function removeRelation($name, $a, $b)
+    public function removeRelation($name, $a, $b, $direction = '')
     {
         $a = $this->getLoadedNode($a);
         $b = $this->getLoadedNode($b);
 
         $this->dispatchEvent(new Events\PreRelationRemove($a, $b, $name));
+
+        if(strtolower($direction) == 'to') {
+            $tmp = $b;
+            $b = $a;
+            $a = $tmp;
+        }
 
         $existing = $this->getRelationsFrom($a, $name);
 
@@ -526,7 +532,7 @@ class EntityManager
 
                 if ($removeCallback && $list instanceof Extension\ArrayCollection) {
                     foreach ($list->getRemovedElements() as $entry) {
-                        $removeCallback($entry, $property->getName());
+                        $removeCallback($entry, $property->getName(), $property->getDirection());
                     }
                 }
             }
@@ -648,8 +654,8 @@ class EntityManager
         $addCallback = function ($entry, $relation, $direction) use ($entity, $em) {
             $em->addRelation($relation, $entity, $entry, $direction);
         };
-        $removeCallback = function ($entry, $relation) use ($entity, $em) {
-            $em->removeRelation($relation, $entity, $entry);
+        $removeCallback = function ($entry, $relation, $direction) use ($entity, $em) {
+            $em->removeRelation($relation, $entity, $entry, $direction);
         };
 
         $this->traverseRelations($entity, $addCallback, $removeCallback);
